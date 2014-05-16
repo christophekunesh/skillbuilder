@@ -1,5 +1,360 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+
+    form(action='', method='POST')
+        p Create a new learning resource:
+        input(type='text', name='name', placeholder='Name', required)
+        //input(type='text', name='leads_to', placeholder='Leads To', required)
+        input(type='submit', value='Create')
+
+    title Graph | DataSet
+    style(type='text/css').
+      html, body {
+      font: 11pt arial;
+      }
+      h1 {
+      font-size: 150%;
+      margin: 5px 0;
+      }
+      h2 {
+      font-size: 100%;
+      margin: 5px 0;
+      }
+      table.view {
+      width: 100%;
+      }
+      table td {
+      vertical-align: top;
+      }
+      table table {
+      background-color: #f5f5f5;
+      border: 1px solid #e5e5e5;
+      }
+      table table td {
+      vertical-align: middle;
+      }
+      input[type=text], pre {
+      border: 1px solid lightgray;
+      }
+      pre {
+      margin: 0;
+      padding: 5px;
+      font-size: 10pt;
+      }
+      #graph {
+      width: 100%;
+      height: 600px;
+      border: 1px solid lightgray;
+      }
+    script(src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js')
+    script(type='text/javascript', src='http://visjs.org/dist/vis.js').
+    script(type='text/javascript').
+      var nodes, edges, graph;
+      // convenience method to stringify a JSON object
+      function toJSON (obj) {
+      return JSON.stringify(obj, null, 4);
+      }
+      $(window).load(function () {
+      // attach actions to the node buttons
+      $('#node-add').click(function () {
+      try {
+      nodes.add({
+      id: $('#node-id').val(),
+      label: $('#node-label').val()
+      });
+      var nodeObject = {
+        "id": $("#node-id").val(),
+        "label": $("#node-label").val()
+      };
+      var restServerURL = "http://localhost:7474/db/data";
+      $.ajax({
+          type: "POST",
+          url: restServerURL + "/node",
+          data: JSON.stringify(nodeObject),
+          dataType: "json",
+          contentType: "application/json",
+          success: function( data, xhr, textStatus ) {
+              // process the returned node data however you need
+          },
+          error: function( xhr ) {
+              window.console && console.log( xhr );
+          },
+          complete: function() {
+              alert("Address of new node: " + data.self);
+          }
+      });
+      }
+      catch (err) {
+      alert(err);
+      }
+      });
+      $('#node-update').click(function () {
+      try {
+      nodes.update({
+      id: $('#node-id').val(),
+      label: $('#node-label').val()
+      });
+      }
+      catch (err) {
+      alert(err);
+      }
+      });
+      $('#node-remove').click(function () {
+      try {
+      var id = $('#node-id').val();
+      nodes.remove(id);
+      }
+      catch (err) {
+      alert(err);
+      }
+      });
+      // attach actions to the edge buttons
+      $('#edge-add').click(function () {
+      try {
+      edges.add({
+      id: $('#edge-id').val(),
+      from: $('#edge-from').val(),
+      to: $('#edge-to').val()
+      });
+      var restServerURL = "http://localhost:7474/db/data";
+      var edgeObject = {
+        "to": restServerURL + "/node/" + $('#edge-to').val(),
+        "label": $("#edge-id").val()
+      };
+      
+      $.ajax({
+          type: "POST",
+          url: restServerURL + "/node/" + $('#edge-from').val() + "/relationships",
+          data: JSON.stringify(edgeObject),
+          dataType: "json",
+          contentType: "application/json",
+          success: function( data, xhr, textStatus ) {
+              // process the returned edge data however you need
+          },
+          error: function( xhr ) {
+              window.console && console.log( xhr );
+          },
+          complete: function() {
+              alert("Address of new edge: " + data);
+          }
+      });
+      }
+      catch (err) {
+      alert(err);
+      }
+      });
+      $('#edge-update').click(function () {
+      try {
+      edges.update({
+      id: $('#edge-id').val(),
+      from: $('#edge-from').val(),
+      to: $('#edge-to').val()
+      });
+      }
+      catch (err) {
+      alert(err);
+      }
+      });
+      $('#edge-remove').click(function () {
+      try {
+      var id = $('#edge-id').val();
+      edges.remove(id);
+      }
+      catch (err) {
+      alert(err);
+      }
+      });
+      // create an array with nodes
+      nodes = new vis.DataSet();
+      nodes.subscribe('*', function () {
+      $('#nodes').html(toJSON(nodes.get()));
+      });
+      //- nodes.add([
+      //- {id: '1', label: 'Node 1'},
+      //- {id: '2', label: 'Node 2'},
+      //- {id: '3', label: 'Node 3'},
+      //- {id: '4', label: 'Node 4'},
+      //- {id: '5', label: 'Node 5'}
+      //- ]);
+
+      
+      
+
+      // create an array with edges
+      edges = new vis.DataSet();
+      edges.subscribe('*', function () {
+      $('#edges').html(toJSON(edges.get()));
+      });
+      //- edges.add([
+      //- {id: '1', from: '1', to: '2'},
+      //- {id: '2', from: '1', to: '3'},
+      //- {id: '3', from: '2', to: '4'},
+      //- {id: '4', from: '2', to: '5'}
+      //- ]);
+
+
+      var connectionCount = [];
+      var nodeCount = 100;
+      for (var i = 0; i < nodeCount; i++) {
+        nodes.add({
+          id: i,
+          label: "Node " + String(i),
+          title: "This is an awesome thing to learn. <br>" + 
+                 "*     Often learned Freshman year of college <br>" +
+                 "*     These books are very helpful: book 1, book 2 <br>" +
+                 "*     This is the best online tutorial: tutorial 1"
+
+        });
+
+        connectionCount[i] = 0;
+
+        // create edges in a scale-free-graph way
+        if (i == 1) {
+          var from = i;
+          var to = 0;
+          edges.add({
+            from: from,
+            to: to
+          });
+          connectionCount[from]++;
+          connectionCount[to]++;
+        }
+        else if (i > 1) {
+          var conn = edges.get().length * 2;
+          var rand = Math.floor(Math.random() * conn);
+          var cum = 0;
+          var j = 0;
+          while (j < connectionCount.length && cum < rand) {
+            cum += connectionCount[j];
+            j++;
+          }
+
+          var from = i;
+          var to = j;
+          edges.add({
+            from: from,
+            to: to
+          });
+          connectionCount[from]++;
+          connectionCount[to]++;
+        }
+      }
+      // create a graph
+      var container = $('#graph').get(0);
+      var data = {
+        nodes: nodes,
+        edges: edges
+      };
+
+      var options = {
+      
+        clustering: true,
+        edges: {
+          style: "arrow-center"
+        }
+
+      };
+
+      graph = new vis.Graph(container, data, options);
+
+      // add event listeners
+      graph.on('select', function(params) {
+        var node = params.nodes[0];
+        var edges = params.edges;
+
+        var prerequisites = [];
+        var next = [];
+        edges.forEach( function (edge)
+        {
+    
+          if (node == data.edges.data[edge].to) {
+            from_node = data.edges.data[edge].from;
+            prerequisites.push(data.nodes.data[from_node].label);
+          }
+          if (node == data.edges.data[edge].from) {
+            to_node = data.edges.data[edge].to;
+            next.push(data.nodes.data[to_node].label);
+          } 
+
+        });
+
+        document.getElementById('selection').innerHTML = "Want to learn " + data.nodes.data[node].label + "? <br><br>" + 
+                                                         "Here's a brief description:<br>" + data.nodes.data[node].title + "<br><br>" +
+                                                         "Need to know the following: <br>" + prerequisites.join("<br>") + "<br><br>" +
+                                                         "Learning this is necessary to learn these topics: <br> " + next.join("<br>");
+      });
+      });
+
+    table
+      tr
+        td
+          h2 Node
+          table
+            tr
+              td
+              td
+                label(for='node-id') Id
+              td
+                input#node-id(type='text', value='6')
+            tr
+              td
+              td
+                label(for='node-label') Label
+              td
+                input#node-label(type='text', value='Node 6')
+            tr
+              td
+              td Action
+              td
+                button#node-add Add
+                button#node-update Update
+                button#node-remove Remove
+        td
+          h2 Edge
+          table
+            tr
+              td
+              td
+                label(for='edge-id') Id
+              td
+                input#edge-id(type='text', value='5')
+            tr
+              td
+              td
+                label(for='edge-from') From
+              td
+                input#edge-from(type='text', value='3')
+            tr
+              td
+              td
+                label(for='edge-to') To
+              td
+                input#edge-to(type='text', value='4')
+            tr
+              td
+              td Action
+              td
+                button#edge-add Add
+                button#edge-update Update
+                button#edge-remove Remove
+    h1 View
+    table.view
+      colgroup
+        col(width='10%')
+        col(width='10%')
+        col(width='80%')
+      tr
+        td
+          h2 Nodes
+          pre#nodes.
+            
+        td
+          h2 Edges
+          pre#edges.
+            
+        td
+          h2 Graph
+          #graph
+          h2 Selection
+          #selection

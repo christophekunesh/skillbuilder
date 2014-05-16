@@ -23,6 +23,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/users', users);
+/*app.get('/', function(req, res){
+    res.render('index', { title: 'App' });
+});
+app.post('/', function(req, res) {
+    var name = req.body.name
+    console.log('name:', name);
+    // var query = [
+    //     'CREATE (user:User {name})',
+    //     'RETURN user',
+    // ].join('\n');
+    // db.query(query, params, function (err, results) {
+    //     if (err) return callback(err);
+    // });
+    //res.render('index', { title: 'Skillbuilder' });
+})*/
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {

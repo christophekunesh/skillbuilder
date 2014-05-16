@@ -1,0 +1,216 @@
+extends layout
+
+block content
+    h1 Users
+
+    if users.length
+        p Here are the current users:
+        ul.users
+            for user in users
+                li.user
+                    a(href='/users/#{user.id}') #{user.name}
+    else
+        p There are no users currently.
+
+    form(action='', method='POST')
+        p Create a new learning resource:
+        input(type='text', name='name', placeholder='Name', required)
+        input(type='text', name='leads_to', placeholder='Leads To', required)
+        input(type='submit', value='Create')
+
+    title Graph | Navigation
+    style(type='text/css')
+      body {
+      font: 10pt sans;
+      }
+      #mygraph {
+      position:relative;
+      width: 600px;
+      height: 600px;
+      border: 1px solid lightgray;
+      }
+      table.legend_table {
+      font-size: 11px;
+      border-width:1px;
+      border-color:#d3d3d3;
+      border-style:solid;
+      }
+      table.legend_table,td {
+      border-width:1px;
+      border-color:#d3d3d3;
+      border-style:solid;
+      padding: 2px;
+      }
+      div.table_content {
+      width:80px;
+      text-align:center;
+      }
+      div.table_description {
+      width:100px;
+      }
+      #operation {
+      font-size:28px;
+      }
+      #graph-popUp {
+      display:none;
+      position:absolute;
+      top:350px;
+      left:170px;
+      z-index:299;
+      width:250px;
+      height:120px;
+      background-color: #f9f9f9;
+      border-style:solid;
+      border-width:3px;
+      border-color: #5394ed;
+      padding:10px;
+      text-align: center;
+      }
+    script(type='text/javascript', src='http://visjs.org/dist/vis.js')
+    link(type='text/css', rel='stylesheet', href='http://visjs.org/dist/vis.css')
+    script(type='text/javascript')
+      var nodes = null;
+      var edges = null;
+      var graph = null;
+      function draw() {
+      nodes = [];
+      edges = [];
+      //- var connectionCount = [];
+      // randomly create some nodes and edges
+      var nodeCount = #{users.length};
+      var i;
+      for (i = 0; i < nodeCount; i++) {
+      nodes.push({
+      id: i,
+      label: "#{users[1].name}"
+      });
+      //- connectionCount[i] = 0;
+      //- // create edges in a scale-free-graph way
+      //- if (i == 1) {
+      //- var from = i;
+      //- var to = 0;
+
+      (for var j = ; )
+      edges.push({
+      from: from,
+      to: to
+      });
+      //- connectionCount[from]++;
+      //- connectionCount[to]++;
+      //- }
+      //- else if (i > 1) {
+      //- var conn = edges.length * 2;
+      //- var rand = Math.floor(Math.random() * conn);
+      //- var cum = 0;
+      //- var j = 0;
+      //- while (j < connectionCount.length && cum < rand) {
+      //- cum += connectionCount[j];
+      //- j++;
+      //- }
+      //- var from = i;
+      //- var to = j;
+      //- edges.push({
+      //- from: from,
+      //- to: to
+      //- });
+      //- connectionCount[from]++;
+      //- connectionCount[to]++;
+      //- }
+      }
+      }
+      // create a graph
+      var container = document.getElementById('mygraph');
+      var data = {
+      nodes: nodes,
+      edges: edges
+      };
+      var options = {
+      edges: {
+      length: 50
+      },
+      stabilize: false,
+      dataManipulation: true,
+      onAdd: function(data,callback) {
+      var span = document.getElementById('operation');
+      var idInput = document.getElementById('node-id');
+      var labelInput = document.getElementById('node-label');
+      var saveButton = document.getElementById('saveButton');
+      var cancelButton = document.getElementById('cancelButton');
+      var div = document.getElementById('graph-popUp');
+      span.innerHTML = "Add Node";
+      idInput.value = data.id;
+      labelInput.value = data.label;
+      saveButton.onclick = saveData.bind(this,data,callback);
+      cancelButton.onclick = clearPopUp.bind();
+      div.style.display = 'block';
+      },
+      onEdit: function(data,callback) {
+      var span = document.getElementById('operation');
+      var idInput = document.getElementById('node-id');
+      var labelInput = document.getElementById('node-label');
+      var saveButton = document.getElementById('saveButton');
+      var cancelButton = document.getElementById('cancelButton');
+      var div = document.getElementById('graph-popUp');
+      span.innerHTML = "Edit Node";
+      idInput.value = data.id;
+      labelInput.value = data.label;
+      saveButton.onclick = saveData.bind(this,data,callback);
+      cancelButton.onclick = clearPopUp.bind();
+      div.style.display = 'block';
+      },
+      onConnect: function(data,callback) {
+      if (data.from == data.to) {
+      var r=confirm("Do you want to connect the node to itself?");
+      if (r==true) {
+      callback(data);
+      }
+      }
+      else {
+      callback(data);
+      }
+      }
+      };
+      graph = new vis.Graph(container, data, options);
+      // add event listeners
+      graph.on('select', function(params) {
+      document.getElementById('selection').innerHTML = 'Selection: ' + params.nodes;
+      });
+      graph.on("resize", function(params) {console.log(params.width,params.height)});
+      function clearPopUp() {
+      var saveButton = document.getElementById('saveButton');
+      var cancelButton = document.getElementById('cancelButton');
+      saveButton.onclick = null;
+      cancelButton.onclick = null;
+      var div = document.getElementById('graph-popUp');
+      div.style.display = 'none';
+      }
+      function saveData(data,callback) {
+      var idInput = document.getElementById('node-id');
+      var labelInput = document.getElementById('node-label');
+      var div = document.getElementById('graph-popUp');
+      data.id = idInput.value;
+      data.label = labelInput.value;
+      clearPopUp();
+      callback(data);
+      }
+      }
+    body(onload='draw();')
+    
+    br
+    #graph-popUp
+      span#operation node
+      br
+      table(style='margin: auto;')
+        tr
+          td id
+          td
+            input#node-id(value='new value')
+        tr
+          td label
+          td
+            input#node-label(value='new value')
+      input#saveButton(type='button', value='save')
+      input#cancelButton(type='button', value='cancel')
+    br
+    #mygraph
+    p#selection
